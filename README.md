@@ -1,5 +1,8 @@
 # quintain
 
+[![CI (install, test)](https://github.com/maltekliemann/quintain/actions/workflows/linux.yaml/badge.svg)](https://github.com/maltekliemann/quintain/actions/workflows/linux.yaml)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 **quintain** is a tool for simulating hardware interactions.
 
 Every _client_ has _ports_, which hold a value and are connected to ports of the
@@ -42,8 +45,8 @@ server.add_device(
 This adds a device `"main"` to the server. The device has two ports, `"in"` and
 `"out"`, each with default value zero. The controller calls the function
 `add_two` on the ports of the device. In this case, it add `2` to the value of
-`"in"` and writes it to `"out"`. Basically, the controller adds logic to
-the otherwise dumb device.
+`"in"` and writes it to `"out"`. Basically, the controller adds logic to the
+otherwise dumb device.
 
 We add two other devices to the setup, one for capturing the values of `"out"`,
 and one for modifying the values of `"in"`:
@@ -86,7 +89,8 @@ server.add_connection("main", "out", "recorder", "capture")
 For example, the first call connects port `"values"` of device `"lookup"` to
 port `"in"` of `"main"`.
 
-Now we can run the simulation by calling `next_cycle` to advance time by one time unit:
+Now we can run the simulation by calling `next_cycle` to advance time by one
+time unit:
 
 ```python
 for _ in range(5):
@@ -99,11 +103,10 @@ Let's check out the results of the simulation:
 assert recorder.data == {"capture": [None, 2, 5, 6, 7]}
 ```
 
-
 ### Real-Time Server
 
-The `RealTimeServer` class of **quintain** implements virtually the same interface as
-`Server`, but is able to operate asynchronously using `asyncio`:
+The `RealTimeServer` class of **quintain** implements virtually the same
+interface as `Server`, but is able to operate asynchronously using `asyncio`:
 
 ```python
 duration = 0.1
@@ -144,12 +147,11 @@ assert recorder.data == {"capture": [None, 2, 5, 6, 7]}
 The `duration: float` parameter determines the interval between two cycles in
 seconds.
 
-
 ### Custom Controllers
 
-**quintain** contains some examples of controllers in the
-`quintain.controllers` module. You can create your own controllers by
-implementing the following interface:
+**quintain** contains some examples of controllers in the `quintain.controllers`
+module. You can create your own controllers by implementing the following
+interface:
 
 ```python
 class AbstractController:
