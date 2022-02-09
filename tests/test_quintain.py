@@ -1,9 +1,25 @@
 import asyncio
+import sys
 
 import pytest
 
 from quintain.quintain import Connection, Port, Server, RealTimeServer
 from quintain.controllers import Controller, Recorder, LookupTable
+
+
+@pytest.fixture(scope="module")
+def timer_precision():
+    """Set the precision of ``time.sleep`` under Windows."""
+    if not sys.platform.startswith("win32"):
+        yield
+    else:
+        # See https://docs.microsoft.com/en-us/windows/win32/api/timeapi/nf-timeapi-timebeginperiod
+        import ctypes
+
+        winmm = ctypes.WinDLL("winmm")
+        winmm.timeBeginPeriod(1)
+        yield
+        winmm.timeEndPeriod(1)
 
 
 class TestConnection:
