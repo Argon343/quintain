@@ -312,3 +312,14 @@ class RealTimeServer:
                 the server
         """
         self._server.add_device(name, ports, controller)
+
+    def add_service(self, service: AbstractService, priority: int = 0) -> None:
+        """Add a service to the server.
+
+        Args:
+            service: The service to add
+            priority: The priority of the service
+
+        Services with higher priority are executed before those with lower priority.
+        """
+        self._server.add_service(service, priority)

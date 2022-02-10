@@ -109,6 +109,27 @@ class TestRealTimeServer:
         await server.join()
         assert logger.data == {"result": [None, 2, 5, 6, 7]}
 
+    async def test_with_services(self):
+        duration = 0.1
+        server = RealTimeServer(duration=duration)
+        server.add_device(
+            "add_two", [Port("number", 0), Port("result", 0)], Controller(add_two)
+        )
+        server.add_service(
+            ModifyPorts(
+                {"add_two": {"number": TimeSeries(time=[0, 1, 2], values=[3, 4, 5])}}
+            ),
+            priority=1
+        )
+        capture_all = CaptureAll()
+        server.add_service(capture_all)
+
+        server.start()
+        await asyncio.sleep(4.5 * duration)
+        server.stop()
+        await server.join()
+        assert capture_all.data == {"add_two": {"number": [3, 4, 5, 5, 5], "result": [0, 5, 6, 7, 7]}}
+
 
 def add_two(ports, _):
     number = ports.get("number")
