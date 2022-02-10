@@ -97,6 +97,7 @@ class Server:
             c.fn(self._state)
         for c in self._connections:
             c.transfer()
+        self._state._cycles += 1  # _cycles is considered public in this module
 
     def add_device(
         self,

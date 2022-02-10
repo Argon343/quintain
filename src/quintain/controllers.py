@@ -20,7 +20,6 @@ class Recorder:
     def __init__(self):
         """Captures the values of the controlled ports."""
         self._data = {}
-        self._cycles = 0
 
     def execute(self, ports: dict[str, Port], _: State) -> None:
         for _, p in ports.items():
@@ -29,7 +28,6 @@ class Recorder:
                 values = []
                 self._data[p.name] = values
             values.append(p.value)
-        self._cycles += 1
 
     @property
     def data(self):
@@ -58,12 +56,10 @@ class LookupTable:
         self._values = {
             k: _TimeSeries(time, values) for k, (time, values) in values.items()
         }
-        self._cycles = 0
 
-    def execute(self, ports: dict[str, Port], _: State) -> None:
+    def execute(self, ports: dict[str, Port], state: State) -> None:
         for _, p in ports.items():
-            p.value = self._values[p.name].get(self._cycles)
-        self._cycles += 1
+            p.value = self._values[p.name].get(state.cycles)
 
 
 class _TimeSeries:
