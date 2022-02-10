@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import bisect
+from quintain.utility import TimeSeries
 
 
 class Controller:
@@ -12,24 +12,22 @@ class Controller:
         """
         self._fn = fn
 
-    def execute(self, ports: dict[str, Port]):
-        self._fn(ports)
+    def execute(self, ports: dict[str, Port], state: State):
+        self._fn(ports, state)
 
 
 class Recorder:
     def __init__(self):
         """Captures the values of the controlled ports."""
         self._data = {}
-        self._cycles = 0
 
-    def execute(self, ports: dict[str, Port]) -> None:
+    def execute(self, ports: dict[str, Port], _: State) -> None:
         for _, p in ports.items():
             values = self._data.get(p.name)
             if values is None:
                 values = []
                 self._data[p.name] = values
             values.append(p.value)
-        self._cycles += 1
 
     @property
     def data(self):
@@ -56,38 +54,9 @@ class LookupTable:
             don't have the same length
         """
         self._values = {
-            k: _TimeSeries(time, values) for k, (time, values) in values.items()
+            k: TimeSeries(time, values) for k, (time, values) in values.items()
         }
-        self._cycles = 0
 
-    def execute(self, ports: dict[str, Port]) -> None:
+    def execute(self, ports: dict[str, Port], state: State) -> None:
         for _, p in ports.items():
-            p.value = self._values[p.name].get(self._cycles)
-        self._cycles += 1
-
-
-class _TimeSeries:
-    def __init__(self, time: list[float], values: list[_ValueType]) -> None:
-        """Time series object that interpolates data points.
-
-        Args:
-            time: The time points
-            values: The data points
-
-        Raises:
-            AssertionError: If both lists don't have the same length
-        """
-        assert len(time) == len(values)
-        self._time = time
-        self._values = values
-
-    def get(self, t):
-        """Return the value of the timeseries at time ``t``.
-
-        If ``t`` is not in ``self._time``, then the value is
-        interpolated by using the value of the previous time point.
-        """
-        index = bisect.bisect_left(self._time, t)
-        if index == len(self._time):
-            index = -1
-        return self._values[index]
+            p.value = self._values[p.name].get(state.cycles)

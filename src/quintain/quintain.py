@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import bisect
+from collections import OrderedDict
 import dataclasses
 import time
 
@@ -28,8 +30,30 @@ class Connection:
         self.receiver.value = self.sender.value
 
 
+class State:
+    def __init__(self):
+        """A class for storing global state."""
+        self._cycles = 0
+        self._user = {}  # Stores server-specific data
+
+    @property
+    def cycles(self) -> int:
+        return self._cycles
+
+    @property
+    def user(self) -> dict:
+        return self._user
+
+
 class AbstractController:
-    def execute(self, ports: dict[str, Port]) -> None:
+    def execute(self, ports: dict[str, Port], state: State) -> None:
+        pass
+
+
+class AbstractService:
+    def execute(
+        self, clients: dict[str, Client], connections: list[Connection], state: State
+    ) -> None:
         pass
 
 
@@ -59,17 +83,19 @@ class Client:
     def ports(self) -> dict[str, Port]:
         return self._ports
 
-    def fn(self) -> None:
+    def fn(self, state: State) -> None:
         """Execute the device's internal logic."""
         if self._controller is None:
             return
-        self._controller.execute(self._ports)
+        self._controller.execute(self._ports, state)
 
 
 class Server:
-    def __init__(self) -> None:
+    def __init__(self, state: Optional[State] = None) -> None:
+        self._services: list[tuple[int, Service]] = []
         self._clients: dict[str, Client] = {}
         self._connections: list[Connection] = []
+        self._state = state or State()
 
     def next_cycle(self) -> None:
         """Advance to the next cycle.
@@ -77,10 +103,13 @@ class Server:
         This function executes all controllers present on the server and
         then transfers data through the connections.
         """
+        for _, s in reversed(self._services):
+            s.execute(self._clients, self._connections, self._state)
         for _, c in self._clients.items():
-            c.fn()
+            c.fn(self._state)
         for c in self._connections:
             c.transfer()
+        self._state._cycles += 1  # _cycles is considered public in this module
 
     def add_device(
         self,
@@ -134,6 +163,19 @@ class Server:
         # multiple inputs (an output can connect to multiple inputs, but
         # each input can have at most one output)!
         self._connections.append(Connection(sender, receiver))
+
+    def add_service(self, service: AbstractService, priority: int = 0) -> None:
+        """Add a service to the server.
+
+        Args:
+            service: The service to add
+            priority: The priority of the service
+
+        Services with higher priority are executed before those with lower priority.
+        """
+        # Note that tuples are by default ordered by their first,
+        # element, then the second one, etc.
+        bisect.insort(self._services, (priority, service))
 
     def _get_port(self, device: str, port: str) -> Port:
         """Get a port by name.
@@ -270,3 +312,14 @@ class RealTimeServer:
                 the server
         """
         self._server.add_device(name, ports, controller)
+
+    def add_service(self, service: AbstractService, priority: int = 0) -> None:
+        """Add a service to the server.
+
+        Args:
+            service: The service to add
+            priority: The priority of the service
+
+        Services with higher priority are executed before those with lower priority.
+        """
+        self._server.add_service(service, priority)
