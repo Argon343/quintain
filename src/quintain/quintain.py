@@ -104,7 +104,6 @@ class Server:
         then transfers data through the connections.
         """
         for _, s in reversed(self._services):
-            print(_)
             s.execute(self._clients, self._connections, self._state)
         for _, c in self._clients.items():
             c.fn(self._state)
