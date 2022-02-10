@@ -30,7 +30,8 @@ server = Server()
 We add devices to the server using `add_device`:
 
 ```python
-def add_two(ports):
+def add_two(ports, state):
+    del state
     number = ports.get("in")
     result = ports.get("out")
     result.value = number.value + 2
@@ -44,9 +45,10 @@ server.add_device(
 
 This adds a device `"main"` to the server. The device has two ports, `"in"` and
 `"out"`, each with default value zero. The controller calls the function
-`add_two` on the ports of the device. In this case, it add `2` to the value of
-`"in"` and writes it to `"out"`. Basically, the controller adds logic to the
-otherwise dumb device.
+`add_two` on the ports of the device and the global state of the server. In this
+case, it add `2` to the value of `"in"` and writes it to `"out"`. We delete
+`state` to signal that it remains unused. Basically, the controller adds logic
+to the otherwise dumb device.
 
 We add two other devices to the setup, one for capturing the values of `"out"`,
 and one for modifying the values of `"in"`:
@@ -112,7 +114,8 @@ interface as `Server`, but is able to operate asynchronously using `asyncio`:
 duration = 0.1
 server = RealTimeServer(duration=duration)
 
-def add_two(ports):
+def add_two(ports, state):
+    del state
     number = ports.get("in")
     result = ports.get("out")
     result.value = number.value + 2
@@ -155,8 +158,50 @@ interface:
 
 ```python
 class AbstractController:
-    def execute(self, ports: dict[str, Port]):
+    def execute(self, ports: dict[str, Port], state: quintain.State):
         pass
 ```
 
 Every cycle, `execute()` is called on the device's ports.
+
+The `quintain.State` type has two properties, `cycles` (the current cycle of the
+server) and `user`, which is just a dictionary that can be filled with
+server-specific data. If `execute` should be allowed to change `state` is up to
+the user, but since the order in which the devices are executed is so to speak
+implementation-specific, we advise against this.
+
+### Using Services
+
+Both types of servers may be equipped with _services_, which may be used to
+specify global logic. A service implements the following interface:
+
+```python
+class AbstractService:
+    def execute(
+        self, clients: dict[str, Client], connections: list[Connection], state: State
+    ) -> None:
+        pass
+```
+
+For example, `quintain.services.CaptureAll` records data from all ports
+simulataneously. It may be added as follows:
+
+```python
+from quintain.services import CaptureAll
+
+server = Server()  # Or RealTimeServer()
+capture_all = CaptureAll()
+server.add_service(capture_all)
+```
+
+Services are executed _before_ the connections transfer data and clients execute
+their logic. If you want to make sure that certain services execute before
+others, use the `priority` parameter of `add_services`:
+
+```python
+server.add_service(service0)  # Executes third
+server.add_service(service1, priority=10)  # Executes second
+server.add_service(service2, priority=1000)  # Executes first
+```
+
+Default priority is `0`.
