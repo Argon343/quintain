@@ -32,7 +32,7 @@ class TestConnection:
 
 class TestServer:
     def test_function(self):
-        def add_two(ports):
+        def add_two(ports, _):
             number = ports.get("number")
             result = ports.get("result")
             result.value = number.value + 2
@@ -73,7 +73,7 @@ class TestRealTimeServer:
         assert mock.next_cycle.call_count == 2
 
     async def test_function(self):
-        def add_two(ports):
+        def add_two(ports, _):
             number = ports.get("number")
             result = ports.get("result")
             result.value = number.value + 2

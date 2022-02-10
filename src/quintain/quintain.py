@@ -28,8 +28,23 @@ class Connection:
         self.receiver.value = self.sender.value
 
 
+class State:
+    def __init__(self):
+        """A class for storing global state."""
+        self._cycles = 0
+        self._user = {}  # Stores server-specific data
+
+    @property
+    def cycles(self) -> int:
+        return self._cycles
+
+    @property
+    def user(self) -> dict:
+        return self._user
+
+
 class AbstractController:
-    def execute(self, ports: dict[str, Port]) -> None:
+    def execute(self, ports: dict[str, Port], state: State) -> None:
         pass
 
 
@@ -59,17 +74,18 @@ class Client:
     def ports(self) -> dict[str, Port]:
         return self._ports
 
-    def fn(self) -> None:
+    def fn(self, state: State) -> None:
         """Execute the device's internal logic."""
         if self._controller is None:
             return
-        self._controller.execute(self._ports)
+        self._controller.execute(self._ports, state)
 
 
 class Server:
-    def __init__(self) -> None:
+    def __init__(self, state: Optional[State] = None) -> None:
         self._clients: dict[str, Client] = {}
         self._connections: list[Connection] = []
+        self._state = state or State()
 
     def next_cycle(self) -> None:
         """Advance to the next cycle.
@@ -78,7 +94,7 @@ class Server:
         then transfers data through the connections.
         """
         for _, c in self._clients.items():
-            c.fn()
+            c.fn(self._state)
         for c in self._connections:
             c.transfer()
 

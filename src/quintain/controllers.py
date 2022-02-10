@@ -12,8 +12,8 @@ class Controller:
         """
         self._fn = fn
 
-    def execute(self, ports: dict[str, Port]):
-        self._fn(ports)
+    def execute(self, ports: dict[str, Port], state: State):
+        self._fn(ports, state)
 
 
 class Recorder:
@@ -22,7 +22,7 @@ class Recorder:
         self._data = {}
         self._cycles = 0
 
-    def execute(self, ports: dict[str, Port]) -> None:
+    def execute(self, ports: dict[str, Port], _: State) -> None:
         for _, p in ports.items():
             values = self._data.get(p.name)
             if values is None:
@@ -60,7 +60,7 @@ class LookupTable:
         }
         self._cycles = 0
 
-    def execute(self, ports: dict[str, Port]) -> None:
+    def execute(self, ports: dict[str, Port], _: State) -> None:
         for _, p in ports.items():
             p.value = self._values[p.name].get(self._cycles)
         self._cycles += 1
