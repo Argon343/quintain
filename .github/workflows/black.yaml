@@ -12,9 +12,9 @@ jobs:
   black:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-    - name: Install & run Black
-      run: |
-        pip install black
-        black --check .
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: Install & run Black
+        run: |
+          pip install black
+          black --check .
