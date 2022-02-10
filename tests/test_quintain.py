@@ -61,14 +61,16 @@ class TestServer:
             ModifyPorts(
                 {"add_two": {"number": TimeSeries(time=[0, 1, 2], values=[3, 4, 5])}}
             ),
-            priority=1
+            priority=1,
         )
         capture_all = CaptureAll()
         server.add_service(capture_all)
 
         for _ in range(5):
             server.next_cycle()
-        assert capture_all.data == {"add_two": {"number": [3, 4, 5, 5, 5], "result": [0, 5, 6, 7, 7]}}
+        assert capture_all.data == {
+            "add_two": {"number": [3, 4, 5, 5, 5], "result": [0, 5, 6, 7, 7]}
+        }
 
 
 class TestRealTimeServer:
@@ -119,7 +121,7 @@ class TestRealTimeServer:
             ModifyPorts(
                 {"add_two": {"number": TimeSeries(time=[0, 1, 2], values=[3, 4, 5])}}
             ),
-            priority=1
+            priority=1,
         )
         capture_all = CaptureAll()
         server.add_service(capture_all)
@@ -128,7 +130,9 @@ class TestRealTimeServer:
         await asyncio.sleep(4.5 * duration)
         server.stop()
         await server.join()
-        assert capture_all.data == {"add_two": {"number": [3, 4, 5, 5, 5], "result": [0, 5, 6, 7, 7]}}
+        assert capture_all.data == {
+            "add_two": {"number": [3, 4, 5, 5, 5], "result": [0, 5, 6, 7, 7]}
+        }
 
 
 def add_two(ports, _):
