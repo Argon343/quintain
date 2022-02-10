@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import bisect
+from collections import OrderedDict
 import dataclasses
 import time
 
@@ -90,7 +92,7 @@ class Client:
 
 class Server:
     def __init__(self, state: Optional[State] = None) -> None:
-        self._services: list[Service] = []
+        self._services: list[tuple[int, Service]] = []
         self._clients: dict[str, Client] = {}
         self._connections: list[Connection] = []
         self._state = state or State()
@@ -101,7 +103,8 @@ class Server:
         This function executes all controllers present on the server and
         then transfers data through the connections.
         """
-        for s in self._services:
+        for _, s in reversed(self._services):
+            print(_)
             s.execute(self._clients, self._connections, self._state)
         for _, c in self._clients.items():
             c.fn(self._state)
@@ -162,13 +165,18 @@ class Server:
         # each input can have at most one output)!
         self._connections.append(Connection(sender, receiver))
 
-    def add_service(self, service: AbstractService) -> None:
+    def add_service(self, service: AbstractService, priority: int = 0) -> None:
         """Add a service to the server.
 
         Args:
             service: The service to add
+            priority: The priority of the service
+
+        Services with higher priority are executed before those with lower priority.
         """
-        self._services.append(service)
+        # Note that tuples are by default ordered by their first,
+        # element, then the second one, etc.
+        bisect.insort(self._services, (priority, service))
 
     def _get_port(self, device: str, port: str) -> Port:
         """Get a port by name.

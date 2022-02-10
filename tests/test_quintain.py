@@ -57,13 +57,13 @@ class TestServer:
         server.add_device(
             "add_two", [Port("number", 0), Port("result", 0)], Controller(add_two)
         )
-        capture_all = CaptureAll()
-        # Note that the order of services determines priority!
         server.add_service(
             ModifyPorts(
                 {"add_two": {"number": TimeSeries(time=[0, 1, 2], values=[3, 4, 5])}}
-            )
+            ),
+            priority=1
         )
+        capture_all = CaptureAll()
         server.add_service(capture_all)
 
         for _ in range(5):
