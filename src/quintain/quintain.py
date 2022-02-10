@@ -48,6 +48,13 @@ class AbstractController:
         pass
 
 
+class AbstractService:
+    def execute(
+        self, clients: dict[str, Client], connections: list[Connection], state: State
+    ) -> None:
+        pass
+
+
 class Client:
     def __init__(
         self,
@@ -83,6 +90,7 @@ class Client:
 
 class Server:
     def __init__(self, state: Optional[State] = None) -> None:
+        self._services: list[Service] = []
         self._clients: dict[str, Client] = {}
         self._connections: list[Connection] = []
         self._state = state or State()
@@ -93,6 +101,8 @@ class Server:
         This function executes all controllers present on the server and
         then transfers data through the connections.
         """
+        for s in self._services:
+            s.execute(self._clients, self._connections, self._state)
         for _, c in self._clients.items():
             c.fn(self._state)
         for c in self._connections:
@@ -151,6 +161,14 @@ class Server:
         # multiple inputs (an output can connect to multiple inputs, but
         # each input can have at most one output)!
         self._connections.append(Connection(sender, receiver))
+
+    def add_service(self, service: AbstractService) -> None:
+        """Add a service to the server.
+
+        Args:
+            service: The service to add
+        """
+        self._services.append(service)
 
     def _get_port(self, device: str, port: str) -> Port:
         """Get a port by name.

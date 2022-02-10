@@ -5,6 +5,8 @@ import pytest
 
 from quintain.quintain import Connection, Port, Server, RealTimeServer
 from quintain.controllers import Controller, Recorder, LookupTable
+from quintain.services import CaptureAll, ModifyPorts
+from quintain.utility import TimeSeries
 
 
 @pytest.fixture(scope="module")
@@ -32,11 +34,6 @@ class TestConnection:
 
 class TestServer:
     def test_function(self):
-        def add_two(ports, _):
-            number = ports.get("number")
-            result = ports.get("result")
-            result.value = number.value + 2
-
         server = Server()
         server.add_device(
             "add_two", [Port("number", 0), Port("result", 0)], Controller(add_two)
@@ -54,6 +51,24 @@ class TestServer:
         for _ in range(5):
             server.next_cycle()
         assert logger.data == {"result": [None, 2, 5, 6, 7]}
+
+    def test_with_services(self):
+        server = Server()
+        server.add_device(
+            "add_two", [Port("number", 0), Port("result", 0)], Controller(add_two)
+        )
+        capture_all = CaptureAll()
+        # Note that the order of services determines priority!
+        server.add_service(
+            ModifyPorts(
+                {"add_two": {"number": TimeSeries(time=[0, 1, 2], values=[3, 4, 5])}}
+            )
+        )
+        server.add_service(capture_all)
+
+        for _ in range(5):
+            server.next_cycle()
+        assert capture_all.data == {"add_two": {"number": [3, 4, 5, 5, 5], "result": [0, 5, 6, 7, 7]}}
 
 
 class TestRealTimeServer:
@@ -73,11 +88,6 @@ class TestRealTimeServer:
         assert mock.next_cycle.call_count == 2
 
     async def test_function(self):
-        def add_two(ports, _):
-            number = ports.get("number")
-            result = ports.get("result")
-            result.value = number.value + 2
-
         duration = 0.1
         server = RealTimeServer(duration=duration)
         server.add_device(
@@ -98,3 +108,9 @@ class TestRealTimeServer:
         server.stop()
         await server.join()
         assert logger.data == {"result": [None, 2, 5, 6, 7]}
+
+
+def add_two(ports, _):
+    number = ports.get("number")
+    result = ports.get("result")
+    result.value = number.value + 2
