@@ -4,13 +4,15 @@ from quintain.utility import TimeSeries
 
 
 class Controller:
-    def __init__(self, fn) -> None:
+    def __init__(self, fn: Optional = None) -> None:
         """Simple controller which executes ``fn`` every cycle.
 
         Args:
-            fn: A callable that takes a ``dict[str, Port]``
+            fn:
+                A callable that takes a ``dict[str, Port]`` (noop by
+                default)
         """
-        self._fn = fn
+        self._fn = fn or (lambda ports, state: None)
 
     def execute(self, ports: dict[str, Port], state: State):
         self._fn(ports, state)
