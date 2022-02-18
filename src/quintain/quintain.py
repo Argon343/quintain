@@ -228,7 +228,7 @@ class RealTimeServer:
 
         self._server = server or Server()
         self._task = None
-        self._event = asyncio.Event()
+        self._event = None
         self._timer = timer or time.perf_counter
 
     def start(self, name: Optional[str] = None) -> None:
@@ -238,15 +238,18 @@ class RealTimeServer:
         background.
         """
         name = name or "quintain"
+        self._event = asyncio.Event()
         self._start_time = self._timer()
         self._task = asyncio.create_task(self.serve(), name=name)
 
     def stop(self) -> None:
         """Stop the daemon job."""
+        assert self._event
         self._event.set()
 
     async def join(self) -> None:
         """Wait until done."""
+        assert self._task
         await self._task
 
     async def serve(self) -> None:
