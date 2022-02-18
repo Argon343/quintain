@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="quintain",
-    version="0.2.0",
+    version="0.2.1",
     author="Forschungs- und Entwicklungszentrum Fachhochschule Kiel GmbH",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
