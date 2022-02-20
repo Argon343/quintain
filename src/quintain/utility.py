@@ -24,7 +24,8 @@ class TimeSeries:
         If ``t`` is not in ``self._time``, then the value is
         interpolated by using the value of the previous time point.
         """
-        index = bisect.bisect_left(self._time, t)
+        # Find the right-most value less than ``t``.
+        index = max(0, bisect.bisect_right(self._time, t) - 1)
         if index == len(self._time):
             index = -1
         return self._values[index]
